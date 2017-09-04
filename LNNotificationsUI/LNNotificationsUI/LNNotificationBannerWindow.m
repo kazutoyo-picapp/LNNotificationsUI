@@ -11,9 +11,9 @@
 #import "LNNotificationBannerView.h"
 #import "LNNotificationCenter.h"
 
-static const NSTimeInterval LNNotificationAnimationDuration = 0.5;
-static const NSTimeInterval LNNotificationFullDuration = 5.0;
-static const NSTimeInterval LNNotificationCutOffDuration = 2.5;
+static const NSTimeInterval LNNotificationAnimationDefaultDuration = 0.5;
+static const NSTimeInterval LNNotificationFullDefaultDuration = 5.0;
+static const NSTimeInterval LNNotificationCutOffDefaultDuration = 2.5;
 
 static const CGFloat LNNotificationViewHeight = 68.0;
 
@@ -26,6 +26,9 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 @interface LNNotificationBannerWindow ()
 
 @property (nonatomic) BOOL ignoresAddedConstraints;
+@property (nonatomic) NSTimeInterval notificationAnimationDuration;
+@property (nonatomic) NSTimeInterval notificationFullDuration;
+@property (nonatomic) NSTimeInterval notificationCutOffDuration;
 
 @end
 
@@ -134,6 +137,11 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 		[self setRootViewController:vc];
 		
 		self.windowLevel = UIWindowLevelAlert + 2000;
+        
+        // Duration Init
+        _notificationAnimationDuration = LNNotificationAnimationDefaultDuration;
+        _notificationCutOffDuration = LNNotificationCutOffDefaultDuration;
+        _notificationFullDuration = LNNotificationFullDefaultDuration;
 	}
 	
 	return self;
@@ -146,6 +154,33 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 
 - (void)presentNotification:(LNNotification *)notification completionBlock:(void (^)())completionBlock
 {
+    // Animation Duration
+    NSTimeInterval animationDuration;
+    if (notification.notificationAnimationDuration > 0) {
+        animationDuration = notification.notificationAnimationDuration;
+    } else {
+        animationDuration = LNNotificationAnimationDefaultDuration;
+    }
+    _notificationAnimationDuration = animationDuration;
+    
+    // CutOff Duration
+    NSTimeInterval cutOffDuration;
+    if (notification.notificationCutOffDuration > 0) {
+        cutOffDuration = notification.notificationCutOffDuration;
+    } else {
+        cutOffDuration = LNNotificationCutOffDefaultDuration;
+    }
+    _notificationCutOffDuration = cutOffDuration;
+    
+    // full Duration
+    NSTimeInterval fullDuration;
+    if (notification.notificationFullDuration > 0) {
+        fullDuration = notification.notificationFullDuration;
+    } else {
+        fullDuration = LNNotificationFullDefaultDuration;
+    }
+    _notificationFullDuration = fullDuration;
+    
 	NSDate* targetDate;
  
 	if(_lastShowDate == nil)
@@ -154,7 +189,7 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 	}
 	else
 	{
-		targetDate = [_lastShowDate dateByAddingTimeInterval:LNNotificationCutOffDuration];
+		targetDate = [_lastShowDate dateByAddingTimeInterval:_notificationCutOffDuration];
 	}
 	
 	NSTimeInterval delay = [targetDate timeIntervalSinceDate:[NSDate date]];
@@ -170,7 +205,7 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 		_topConstraint.constant = -LNNotificationViewHeight;
 		[self layoutIfNeeded];
 		
-		[UIView animateWithDuration:LNNotificationAnimationDuration delay:delay usingSpringWithDamping:500 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+		[UIView animateWithDuration:_notificationAnimationDuration delay:delay usingSpringWithDamping:500 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
 			_topConstraint.constant = 0;
 			[self layoutIfNeeded];
 		} completion:^(BOOL finished) {
@@ -179,7 +214,7 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 			
 			_pendingCompletionHandler = completionBlock;
 			
-			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(LNNotificationCutOffDuration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_notificationCutOffDuration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 				if(_pendingCompletionHandler)
 				{
 					void (^prevPendingCompletionHandler)() = _pendingCompletionHandler;
@@ -202,7 +237,7 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 		
 		
 		
-		[UIView animateWithDuration:0.75 * LNNotificationAnimationDuration delay:delay usingSpringWithDamping:500 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+		[UIView animateWithDuration:0.75 * _notificationAnimationDuration delay:delay usingSpringWithDamping:500 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
 			frame.origin.y = 0;
 			_notificationView.notificationContentView.frame = frame;
 			snapshot.alpha = 0;
@@ -212,7 +247,7 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 			
 			_pendingCompletionHandler = completionBlock;
 			
-			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(LNNotificationCutOffDuration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_notificationCutOffDuration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 				if(_pendingCompletionHandler)
 				{
 					void (^prevPendingCompletionHandler)() = _pendingCompletionHandler;
@@ -236,7 +271,7 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 		return;
 	}
 	
-	NSDate* targetDate = [_lastShowDate dateByAddingTimeInterval:LNNotificationFullDuration];
+	NSDate* targetDate = [_lastShowDate dateByAddingTimeInterval:_notificationFullDuration];
 	
 	NSTimeInterval delay = [targetDate timeIntervalSinceDate:[NSDate date]];
 	
@@ -256,7 +291,7 @@ static const CGFloat LNNotificationViewHeight = 68.0;
 		_notificationViewShown = NO;
 	});
 	
-	[UIView animateWithDuration:LNNotificationAnimationDuration delay:delay usingSpringWithDamping:500 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState animations:^{
+	[UIView animateWithDuration:_notificationAnimationDuration delay:delay usingSpringWithDamping:500 initialSpringVelocity:0 options:UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState animations:^{
 		_topConstraint.constant = -LNNotificationViewHeight;
 		[self layoutIfNeeded];
 	} completion:^(BOOL finished) {

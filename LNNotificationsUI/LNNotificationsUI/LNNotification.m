@@ -95,6 +95,9 @@
 	copy.defaultAction = self.defaultAction;
 	copy.otherActions = self.otherActions;
 	copy.soundName = self.soundName;
+    copy.notificationAnimationDuration = self.notificationAnimationDuration;
+    copy.notificationCutOffDuration = self.notificationCutOffDuration;
+    copy.notificationFullDuration = self.notificationFullDuration;
 	
 	return copy;
 }
