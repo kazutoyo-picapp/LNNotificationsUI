@@ -33,6 +33,9 @@
 @property (nonatomic, strong) UIImage* icon;
 @property (nonatomic, copy) NSDate* date;
 @property (nonatomic) BOOL displaysWithRelativeDateFormatting;
+@property (nonatomic) NSTimeInterval notificationAnimationDuration;
+@property (nonatomic) NSTimeInterval notificationFullDuration;
+@property (nonatomic) NSTimeInterval notificationCutOffDuration;
 
 @property (nonatomic, copy) NSString* soundName;
 
